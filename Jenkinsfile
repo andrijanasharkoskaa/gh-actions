@@ -9,6 +9,7 @@ pipeline {
         ARTIFACT_VERSION = "${env.BUILD_NUMBER}"
         DOCKER_IMAGE_NAME = "my-app:${ARTIFACT_VERSION}"
         NEXUS_REPO_URL = "nexus.company.com/repository/docker-hosted/"
+        MONGO_URI = "mongodb://mongo:27017/myapp"  // set your DB URI
     }
 
     stages {

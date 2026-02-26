@@ -10,10 +10,9 @@
 
     <script>
       async function loadData() {
-        const res = await fetch("http://localhost:3000/api/users");
+        const res = await fetch("http://localhost:3002/api/users");
         const data = await res.json();
-        document.getElementById("result").innerText =
-          data.message + " " + data.time.now;
+        document.getElementById("result").innerText = data.message;
       }
     </script>
   </body>

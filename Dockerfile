@@ -4,7 +4,8 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 RUN npm install
 COPY backend/ .
-RUN npm run build
+# No build step if you don't have a build script for backend
+# RUN npm run build
 
 # Step 2: Build frontend
 FROM node:18 AS frontend-build
@@ -17,8 +18,18 @@ RUN npm run build
 # Step 3: Create final image
 FROM node:18
 WORKDIR /app
-COPY --from=backend-build /app/backend/dist ./backend
-COPY --from=frontend-build /app/frontend/dist ./frontend
 
-EXPOSE 3000
-CMD ["node", "backend/server.js"]
+# Copy backend
+COPY --from=backend-build /app/backend ./backend
+# Install backend dependencies
+WORKDIR /app/backend
+RUN npm install --production
+
+# Copy frontend build
+COPY --from=frontend-build /app/frontend/build ./frontend
+
+# Expose a safe port
+EXPOSE 3001
+
+# Start backend
+CMD ["node", "server.js"]
