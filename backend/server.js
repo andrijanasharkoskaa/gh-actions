@@ -21,6 +21,7 @@ app.get("/api/users", async (req, res) => {
   });
 });
 
-app.listen(3002, () => {
-  console.log("Backend running on port 3002");
+const PORT = 3002;
+app.listen(PORT, () => {
+  console.log(`Backend running on port ${PORT}`);
 });
