@@ -36,13 +36,25 @@ services:
       - "8080:8080"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock # allows Docker builds
       - ./blue:/blue
       - ./green:/green
       - ./nginx:/nginx
     depends_on:
       - gitea
       - nexus
+      - mongo
+    restart: always
+    networks:
+      - devops-network
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
     restart: always
     networks:
       - devops-network
@@ -87,6 +99,7 @@ volumes:
   gitea-data:
   nexus-data:
   jenkins-data:
+  mongo-data:
 
 networks:
   devops-network:
