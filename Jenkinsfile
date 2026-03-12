@@ -11,7 +11,7 @@ pipeline {
     stages {
 
         stage('Build Frontend & Backend') {
-            agent { docker { image 'node:20' } }
+            agent any
 
             steps {
                 dir('frontend') {
