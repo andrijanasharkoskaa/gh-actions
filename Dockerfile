@@ -26,7 +26,7 @@ WORKDIR /app/backend
 RUN npm install --production
 
 # Copy frontend build
-COPY --from=frontend-build /app/frontend/build ./frontend/build
+COPY --from=frontend-build /app/frontend/build /app/frontend/build
 
 # Expose new port
 EXPOSE 3002
