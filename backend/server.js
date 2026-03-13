@@ -14,8 +14,8 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, "../frontend")));
+// Serve frontend (React production build)
+app.use(express.static(path.join(__dirname, "../frontend/build")));
 
 // API routes
 app.get("/api/users", async (req, res) => {
@@ -26,7 +26,7 @@ app.get("/api/users", async (req, res) => {
 
 // Serve index.html for all other routes (React routing)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/index.html"));
+  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
 
 const PORT = 3002;
