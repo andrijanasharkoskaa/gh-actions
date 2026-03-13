@@ -60,23 +60,23 @@ services:
       - devops-network
 
   blue-app:
-    image: nginx:alpine
+    image: nexus:8083/repository/my-app:latest
     container_name: blue-app
-    volumes:
-      - ./blue:/usr/share/nginx/html
-    expose:
-      - "80"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/testdb
+    depends_on:
+      - mongo
     restart: always
     networks:
       - devops-network
 
   green-app:
-    image: nginx:alpine
+    image: nexus:8083/repository/my-app:latest
     container_name: green-app
-    volumes:
-      - ./green:/usr/share/nginx/html
-    expose:
-      - "80"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/testdb
+    depends_on:
+      - mongo
     restart: always
     networks:
       - devops-network
