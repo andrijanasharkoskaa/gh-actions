@@ -31,11 +31,44 @@ pipeline {
                 }
             }
         }
+
+        stage('Blue-Green Deploy') {
+            steps {
+                sh '''
+                ACTIVE=$(cat /var/jenkins_home/active_env)
+
+                if [ "$ACTIVE" = "blue" ]; then
+                    TARGET=green
+                else
+                    TARGET=blue
+                fi
+
+                docker pull ${NEXUS_REGISTRY_HOST}:${NEXUS_REGISTRY_PORT}/${DOCKER_IMAGE_NAME}
+
+                docker stop $TARGET-app || true
+                docker rm $TARGET-app || true
+
+                docker run -d \
+                    --name $TARGET-app \
+                    --network devops-network \
+                    ${NEXUS_REGISTRY_HOST}:${NEXUS_REGISTRY_PORT}/${DOCKER_IMAGE_NAME}
+
+                sleep 10
+
+                docker exec reverse-proxy sed -i "s/${ACTIVE}-app:3002/${TARGET}-app:3002/g" /etc/nginx/nginx.conf
+
+                docker exec reverse-proxy nginx -s reload
+
+                echo $TARGET > /var/jenkins_home/active_env
+                '''
+            }
+        }
+
         stage('Cleanup Docker') {
             steps {
-               sh 'docker system prune -f'
-    }
-}
+                sh 'docker system prune -f'
+            }
+        }
 
     }
 }
