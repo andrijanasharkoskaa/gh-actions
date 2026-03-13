@@ -32,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Blue-Green Deploy') {
+         stage('Blue-Green Deploy') {
             steps {
                 sh '''
                 ACTIVE=$(cat /var/jenkins_home/active_env)
@@ -63,12 +63,12 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Cleanup Docker') {
             steps {
-                sh 'docker system prune -f'
-            }
-        }
+               sh 'docker system prune -f'
+    }
+}
 
     }
 }
