@@ -54,10 +54,11 @@ pipeline {
                     ${NEXUS_REGISTRY_HOST}:${NEXUS_REGISTRY_PORT}/${DOCKER_IMAGE_NAME}
 
                 sleep 10
-
-                docker exec reverse-proxy sed -i "s/${ACTIVE}-app:3002/${TARGET}-app:3002/g" /etc/nginx/nginx.conf
-
-                docker exec reverse-proxy nginx -s reload
+            
+            
+            sed -i 's/blue-app:3002/green-app:3002/g' /nginx/nginx.conf
+            
+            docker exec reverse-proxy nginx -s reload
 
                 echo $TARGET > /var/jenkins_home/active_env
                 '''
