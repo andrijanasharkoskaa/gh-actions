@@ -36,7 +36,7 @@ services:
       - "8080:8080"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock # allows Docker builds
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./blue:/blue
       - ./green:/green
       - ./nginx:/nginx
@@ -60,22 +60,22 @@ services:
       - devops-network
 
   blue-app:
-  image: my-app:latest
-  container_name: blue-app
-  ports:
-    - "3002:3002"
-  restart: always
-  networks:
-    - devops-network
+    image: my-app:latest
+    container_name: blue-app
+    ports:
+      - "3002:3002"   # optional if only Nginx accesses it
+    restart: always
+    networks:
+      - devops-network
 
-green-app:
-  image: my-app:latest
-  container_name: green-app
-  ports:
-    - "3003:3002"
-  restart: always
-  networks:
-    - devops-network
+  green-app:
+    image: my-app:latest
+    container_name: green-app
+    ports:
+      - "3003:3002"  # optional, map to different host port if needed
+    restart: always
+    networks:
+      - devops-network
 
   reverse-proxy:
     image: nginx:alpine
