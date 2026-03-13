@@ -13,6 +13,9 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
+# Build React frontend and list the build folder to confirm it exists
+RUN npm run build && ls -l build
+
 # Step 3: Create final image
 FROM node:18
 WORKDIR /app
