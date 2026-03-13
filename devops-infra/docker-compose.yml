@@ -60,26 +60,22 @@ services:
       - devops-network
 
   blue-app:
-    image: nexus:8083/repository/my-app:latest
-    container_name: blue-app
-    environment:
-      - MONGO_URL=mongodb://mongo:27017/testdb
-    depends_on:
-      - mongo
-    restart: always
-    networks:
-      - devops-network
+  image: my-app:latest
+  container_name: blue-app
+  ports:
+    - "3002:3002"
+  restart: always
+  networks:
+    - devops-network
 
-  green-app:
-    image: nexus:8083/repository/my-app:latest
-    container_name: green-app
-    environment:
-      - MONGO_URL=mongodb://mongo:27017/testdb
-    depends_on:
-      - mongo
-    restart: always
-    networks:
-      - devops-network
+green-app:
+  image: my-app:latest
+  container_name: green-app
+  ports:
+    - "3003:3002"
+  restart: always
+  networks:
+    - devops-network
 
   reverse-proxy:
     image: nginx:alpine
