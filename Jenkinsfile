@@ -32,36 +32,41 @@ pipeline {
             }
         }
 
-         stage('Blue-Green Deploy') {
-            steps {
-                sh '''
-                ACTIVE=$(cat /var/jenkins_home/active_env)
+        stage('Blue-Green Deploy') {
+    steps {
+        sh '''
+        # Determine active server from nginx.conf
+        ACTIVE=$(grep -v '#' /nginx/nginx.conf | grep 'server ' | awk '{print $2}' | cut -d ':' -f1)
 
-if [ "$ACTIVE" = "blue" ]; then
-  TARGET=green
-else
-  TARGET=blue
-fi
+        if [ "$ACTIVE" = "blue-app" ]; then
+            TARGET=green
+        else
+            TARGET=blue
+        fi
 
-docker pull host.docker.internal:8083/my-app:$BUILD_NUMBER
+        echo "Active: $ACTIVE, Deploying: $TARGET"
 
-docker stop ${TARGET}-app || true
-docker rm ${TARGET}-app || true
+        # Pull and run target container
+        docker pull host.docker.internal:8083/my-app:$BUILD_NUMBER
 
-docker run -d \
-  --name ${TARGET}-app \
-  --network devops-network \
-  host.docker.internal:8083/my-app:$BUILD_NUMBER
+        docker stop ${TARGET}-app || true
+        docker rm ${TARGET}-app || true
 
-sleep 10
+        docker run -d \
+          --name ${TARGET}-app \
+          --network devops-network \
+          host.docker.internal:8083/my-app:$BUILD_NUMBER
 
-sed -i "s/${ACTIVE}-app:3002/${TARGET}-app:3002/g" /nginx/nginx.conf
-docker exec reverse-proxy nginx -s reload
+        sleep 10
 
-echo $TARGET > /var/jenkins_home/active_env
-                '''
-            }
-        }
+        # Comment old server, uncomment new server in nginx.conf
+        sed -i "s/^#server ${TARGET}-app/server ${TARGET}-app/" /nginx/nginx.conf
+        sed -i "s/^server ${ACTIVE}-app/#server ${ACTIVE}-app/" /nginx/nginx.conf
+
+        docker exec reverse-proxy nginx -s reload
+        '''
+    }
+}
         
         stage('Cleanup Docker') {
             steps {
