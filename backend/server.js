@@ -8,9 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
+// Define PORT safely (from env or fallback)
+const PORT = process.env.PORT || 3002;
+
+// Connect to MongoDB (using Docker network alias "mongo")
 mongoose
-  .connect("mongodb://mongo:27017/testdb") // if using Docker network, use 'mongo'
+  .connect("mongodb://mongo:27017/testdb")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -29,6 +32,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Start server
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend + Frontend running on port ${PORT}`);
 });
