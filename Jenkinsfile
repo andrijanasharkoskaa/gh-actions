@@ -60,8 +60,8 @@ pipeline {
         sleep 10
 
         # Comment old server, uncomment new server in nginx.conf
-        sed -i "s/^#server ${TARGET}-app/server ${TARGET}-app/" /nginx/nginx.conf
-        sed -i "s/^server ${ACTIVE}-app/#server ${ACTIVE}-app/" /nginx/nginx.conf
+        sed -i "s|#server ${TARGET}-app:3002;.*|server ${TARGET}-app:3002;|" /nginx/nginx.conf
+        sed -i "s|server ${ACTIVE}-app:3002;.*|#server ${ACTIVE}-app:3002;|" /nginx/nginx.conf   
 
         docker exec reverse-proxy nginx -s reload
         '''
