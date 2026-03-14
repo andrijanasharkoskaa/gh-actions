@@ -37,30 +37,28 @@ pipeline {
                 sh '''
                 ACTIVE=$(cat /var/jenkins_home/active_env)
 
-                if [ "$ACTIVE" = "blue" ]; then
-                    TARGET=green
-                else
-                    TARGET=blue
-                fi
+if [ "$ACTIVE" = "blue" ]; then
+  TARGET=green
+else
+  TARGET=blue
+fi
 
-                docker pull ${NEXUS_REGISTRY_HOST}:${NEXUS_REGISTRY_PORT}/${DOCKER_IMAGE_NAME}
+docker pull host.docker.internal:8083/my-app:$BUILD_NUMBER
 
-                docker stop $TARGET-app || true
-                docker rm $TARGET-app || true
+docker stop ${TARGET}-app || true
+docker rm ${TARGET}-app || true
 
-                docker run -d \
-                    --name $TARGET-app \
-                    --network devops-network \
-                    ${NEXUS_REGISTRY_HOST}:${NEXUS_REGISTRY_PORT}/${DOCKER_IMAGE_NAME}
+docker run -d \
+  --name ${TARGET}-app \
+  --network devops-network \
+  host.docker.internal:8083/my-app:$BUILD_NUMBER
 
-                sleep 10
-            
-            
-            sed -i 's/blue-app:3002/green-app:3002/g' /nginx/nginx.conf
-            
-            docker exec reverse-proxy nginx -s reload
+sleep 10
 
-                echo $TARGET > /var/jenkins_home/active_env
+sed -i "s/${ACTIVE}-app:3002/${TARGET}-app:3002/g" /nginx/nginx.conf
+docker exec reverse-proxy nginx -s reload
+
+echo $TARGET > /var/jenkins_home/active_env
                 '''
             }
         }
