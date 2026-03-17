@@ -36,7 +36,7 @@ pipeline {
     steps {
         sh '''
         # Determine active server from nginx.conf
-        ACTIVE=$(grep -v '#' /nginx/nginx.conf | grep 'server ' | awk '{print $2}' | cut -d ':' -f1)
+        ACTIVE=$(grep 'server ' /nginx/nginx.conf | grep -v '#' | awk '{print $2}' | cut -d ':' -f1 | tr -d ';')
 
         if [ "$ACTIVE" = "blue-app" ]; then
             TARGET=green
