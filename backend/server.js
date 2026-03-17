@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, "../frontend/build")));
 // API routes
 app.get("/api/users", async (req, res) => {
   res.json({
-    message: "Hello from BLUE",
+    message: "Hello from GREEN",
   });
 });
 
