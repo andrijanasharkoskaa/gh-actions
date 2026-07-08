@@ -7,13 +7,13 @@ pipeline {
 
         NEXUS_REGISTRY = "host.docker.internal:8083"
 
-        FRONTEND_IMAGE = "${NEXUS_REGISTRY}/frontend:${BUILD_NUMBER}"
+        FRONTEND_IMAGE =
+        "${NEXUS_REGISTRY}/frontend:${BUILD_NUMBER}"
 
-        BACKEND_IMAGE = "${NEXUS_REGISTRY}/backend:${BUILD_NUMBER}"
+        BACKEND_IMAGE =
+        "${NEXUS_REGISTRY}/backend:${BUILD_NUMBER}"
 
         NETWORK = "devops-network"
-
-        NGINX_CONFIG = "nginx/nginx.conf"
 
     }
 
@@ -39,24 +39,25 @@ pipeline {
 
                 script {
 
-                    def nginx = readFile("${NGINX_CONFIG}")
+                    def nginxConfig = readFile('/nginx/nginx.conf')
 
 
-                    if (nginx.contains("server frontend-blue:80;")) {
+                    if (nginxConfig.contains('frontend-blue')) {
 
                         env.ACTIVE_COLOR = "BLUE"
-                        env.TARGET_COLOR = "GREEN"
+                        env.DEPLOY_COLOR = "GREEN"
 
-                    } else {
+                    } 
+                    else {
 
                         env.ACTIVE_COLOR = "GREEN"
-                        env.TARGET_COLOR = "BLUE"
+                        env.DEPLOY_COLOR = "BLUE"
 
                     }
 
 
                     echo "Active color: ${env.ACTIVE_COLOR}"
-                    echo "Deploying new version to: ${env.TARGET_COLOR}"
+                    echo "Deploying new version to: ${env.DEPLOY_COLOR}"
 
                 }
 
@@ -81,11 +82,13 @@ pipeline {
                 frontend:${BUILD_NUMBER} \
                 ${FRONTEND_IMAGE}
 
+
                 """
 
             }
 
         }
+
 
 
 
@@ -104,11 +107,13 @@ pipeline {
                 backend:${BUILD_NUMBER} \
                 ${BACKEND_IMAGE}
 
+
                 """
 
             }
 
         }
+
 
 
 
@@ -149,9 +154,12 @@ pipeline {
 
 
 
+
         stage('Push Images To Nexus') {
 
+
             steps {
+
 
                 sh """
 
@@ -167,14 +175,18 @@ pipeline {
 
 
 
-        stage('Deploy New Color') {
+
+
+        stage('Deploy Inactive Environment') {
+
 
             steps {
 
 
                 sh """
 
-                echo "Deploying ${TARGET_COLOR}"
+                echo "Deploying ${DEPLOY_COLOR}"
+
 
 
                 docker pull ${FRONTEND_IMAGE}
@@ -183,7 +195,9 @@ pipeline {
 
 
 
-                if [ "${TARGET_COLOR}" = "GREEN" ]; then
+                if [ "${DEPLOY_COLOR}" = "GREEN" ]
+
+                then
 
 
                     docker stop frontend-green || true
@@ -249,20 +263,28 @@ pipeline {
 
 
 
-        stage('Health Check') {
+
+
+        stage('Health Check New Version') {
+
 
             steps {
 
 
                 sh """
 
-                echo "Checking ${TARGET_COLOR} health"
+
+                echo "Checking ${DEPLOY_COLOR} health"
+
 
                 sleep 10
 
 
 
-                if [ "${TARGET_COLOR}" = "GREEN" ]; then
+                if [ "${DEPLOY_COLOR}" = "GREEN" ]
+
+                then
+
 
                     docker exec reverse-proxy \
                     wget -qO- \
@@ -270,6 +292,7 @@ pipeline {
 
 
                 else
+
 
                     docker exec reverse-proxy \
                     wget -qO- \
@@ -287,81 +310,25 @@ pipeline {
 
 
 
-        stage('Switch Nginx Traffic') {
+
+
+        stage('Ready For Traffic Switch') {
+
 
             steps {
 
 
-                sh """
+                echo """
 
-                echo "Switching traffic to ${TARGET_COLOR}"
+                Deployment completed successfully.
 
+                New version is running on ${DEPLOY_COLOR}.
 
-                python3 <<EOF
+                Change nginx.conf manually to switch traffic.
 
-from pathlib import Path
-
-
-path = Path("${NGINX_CONFIG}")
-
-content = path.read_text()
-
-
-
-if "${TARGET_COLOR}" == "GREEN":
-
-    content = content.replace(
-        "server frontend-blue:80;",
-        "#server frontend-blue:80;"
-    )
-
-    content = content.replace(
-        "#server frontend-green:80;",
-        "server frontend-green:80;"
-    )
-
-    content = content.replace(
-        "server backend-blue:3002;",
-        "#server backend-blue:3002;"
-    )
-
-    content = content.replace(
-        "#server backend-green:3002;",
-        "server backend-green:3002;"
-    )
-
-
-else:
-
-    content = content.replace(
-        "#server frontend-blue:80;",
-        "server frontend-blue:80;"
-    )
-
-    content = content.replace(
-        "server frontend-green:80;",
-        "#server frontend-green:80;"
-    )
-
-    content = content.replace(
-        "#server backend-blue:3002;",
-        "server backend-blue:3002;"
-    )
-
-    content = content.replace(
-        "server backend-green:3002;",
-        "#server backend-green:3002;"
-    )
-
-
-path.write_text(content)
-
-EOF
-
-
+                Then reload nginx:
 
                 docker exec reverse-proxy nginx -s reload
-
 
                 """
 
@@ -371,7 +338,10 @@ EOF
 
 
 
-        stage('Cleanup') {
+
+
+        stage('Cleanup Docker Cache') {
+
 
             steps {
 
@@ -385,6 +355,7 @@ EOF
             }
 
         }
+
 
 
     }
