@@ -1,26 +1,153 @@
 version: "3.8"
 
 services:
-  blue-app:
-    image: nginx:alpine
-    container_name: blue-app
+  # -----------------------
+  # GITEA
+  # -----------------------
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    ports:
+      - "3000:3000"
+      - "2222:22"
     volumes:
-      - ../blue:/usr/share/nginx/html:ro
+      - gitea-data:/data
+    environment:
+      - WEBHOOK.ALLOWED_HOST_LIST=*
+      - ALLOW_LOCALNETWORKS=true
+    restart: always
+    networks:
+      - devops-network
+
+  # -----------------------
+  # NEXUS
+  # -----------------------
+  nexus:
+    image: sonatype/nexus3
+    container_name: nexus
+    ports:
+      - "8081:8081"
+      - "8083:8083"
+    volumes:
+      - nexus-data:/nexus-data
+    restart: always
+    networks:
+      - devops-network
+
+  # -----------------------
+  # JENKINS
+  # -----------------------
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx:/nginx
+    depends_on:
+      - gitea
+      - nexus
+      - mongo
+    restart: always
+    networks:
+      - devops-network
+
+  # -----------------------
+  # DATABASE
+  # -----------------------
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+    networks:
+      - devops-network
+
+  # =====================================================
+  # FRONTEND BLUE
+  # =====================================================
+  frontend-blue:
+    image: host.docker.internal:8083/frontend:latest
+    container_name: frontend-blue
     expose:
       - "80"
     networks:
-      - bg-net
+      - devops-network
 
-  green-app:
-    image: nginx:alpine
-    container_name: green-app
-    volumes:
-      - ../green:/usr/share/nginx/html:ro
+  # =====================================================
+  # FRONTEND GREEN
+  # =====================================================
+  frontend-green:
+    image: host.docker.internal:8083/frontend:latest
+    container_name: frontend-green
     expose:
       - "80"
     networks:
-      - bg-net
+      - devops-network
 
+  # =====================================================
+  # BACKEND BLUE
+  # =====================================================
+  backend-blue:
+    image: host.docker.internal:8083/backend:latest
+    container_name: backend-blue
+    environment:
+      - INSTANCE_NAME=BLUE
+      - MONGO_URL=mongodb://mongo:27017/testdb
+    expose:
+      - "3002"
+    depends_on:
+      - mongo
+    networks:
+      - devops-network
+
+  # =====================================================
+  # BACKEND GREEN
+  # =====================================================
+  backend-green:
+    image: host.docker.internal:8083/backend:latest
+    container_name: backend-green
+    environment:
+      - INSTANCE_NAME=GREEN
+      - MONGO_URL=mongodb://mongo:27017/testdb
+    expose:
+      - "3002"
+    depends_on:
+      - mongo
+    networks:
+      - devops-network
+
+  # =====================================================
+  # API BLUE
+  # =====================================================
+  api-blue:
+    image: host.docker.internal:8083/api:latest
+    container_name: api-blue
+    expose:
+      - "4000"
+    networks:
+      - devops-network
+
+  # =====================================================
+  # API GREEN
+  # =====================================================
+  api-green:
+    image: host.docker.internal:8083/api:latest
+    container_name: api-green
+    expose:
+      - "4000"
+    networks:
+      - devops-network
+
+  # =====================================================
+  # NGINX LOAD BALANCER
+  # =====================================================
   reverse-proxy:
     image: nginx:alpine
     container_name: reverse-proxy
@@ -29,11 +156,33 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - blue-app
-      - green-app
+      - frontend-blue
+      - frontend-green
+      - backend-blue
+      - backend-green
+      - api-blue
+      - api-green
     networks:
-      - bg-net
+      - devops-network
+
+# =====================================================
+# VOLUMES
+# =====================================================
+
+volumes:
+  gitea-data:
+
+  nexus-data:
+
+  jenkins-data:
+
+  mongo-data:
+
+# =====================================================
+# NETWORK
+# =====================================================
 
 networks:
-  bg-net:
+  devops-network:
+    name: devops-network
     driver: bridge
