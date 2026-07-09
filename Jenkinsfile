@@ -33,31 +33,37 @@ pipeline {
 
 
 
+
         stage('Detect Active Color') {
 
             steps {
 
                 script {
 
-                    def nginxConfig = readFile('/nginx/nginx.conf')
+
+                    def nginxConfig = readFile('nginx/nginx.conf')
 
 
                     if (nginxConfig.contains('frontend-blue')) {
 
+
                         env.ACTIVE_COLOR = "BLUE"
                         env.DEPLOY_COLOR = "GREEN"
 
-                    } 
-                    else {
+
+                    } else {
+
 
                         env.ACTIVE_COLOR = "GREEN"
                         env.DEPLOY_COLOR = "BLUE"
+
 
                     }
 
 
                     echo "Active color: ${env.ACTIVE_COLOR}"
                     echo "Deploying new version to: ${env.DEPLOY_COLOR}"
+
 
                 }
 
@@ -67,15 +73,20 @@ pipeline {
 
 
 
+
+
         stage('Build Frontend Image') {
 
+
             steps {
+
 
                 sh """
 
                 docker build \
                 -t frontend:${BUILD_NUMBER} \
                 ./frontend
+
 
 
                 docker tag \
@@ -92,15 +103,19 @@ pipeline {
 
 
 
+
         stage('Build Backend Image') {
 
+
             steps {
+
 
                 sh """
 
                 docker build \
                 -t backend:${BUILD_NUMBER} \
                 ./backend
+
 
 
                 docker tag \
@@ -117,7 +132,9 @@ pipeline {
 
 
 
+
         stage('Login To Nexus') {
+
 
             steps {
 
@@ -144,13 +161,16 @@ pipeline {
                     -u \$NEXUS_USER \
                     --password-stdin
 
+
                     """
 
                 }
 
+
             }
 
         }
+
 
 
 
@@ -163,11 +183,15 @@ pipeline {
 
                 sh """
 
+
                 docker push ${FRONTEND_IMAGE}
+
 
                 docker push ${BACKEND_IMAGE}
 
+
                 """
+
 
             }
 
@@ -184,6 +208,7 @@ pipeline {
 
 
                 sh """
+
 
                 echo "Deploying ${DEPLOY_COLOR}"
 
@@ -228,6 +253,7 @@ pipeline {
                 else
 
 
+
                     docker stop frontend-blue || true
                     docker rm frontend-blue || true
 
@@ -252,7 +278,9 @@ pipeline {
                     ${BACKEND_IMAGE}
 
 
+
                 fi
+
 
 
                 """
@@ -277,6 +305,7 @@ pipeline {
                 echo "Checking ${DEPLOY_COLOR} health"
 
 
+
                 sleep 10
 
 
@@ -291,6 +320,7 @@ pipeline {
                     http://backend-green:3002/health
 
 
+
                 else
 
 
@@ -299,7 +329,9 @@ pipeline {
                     http://backend-blue:3002/health
 
 
+
                 fi
+
 
 
                 """
@@ -312,7 +344,7 @@ pipeline {
 
 
 
-        stage('Ready For Traffic Switch') {
+        stage('Ready For Manual Traffic Switch') {
 
 
             steps {
@@ -320,15 +352,36 @@ pipeline {
 
                 echo """
 
-                Deployment completed successfully.
+                =========================================
 
-                New version is running on ${DEPLOY_COLOR}.
+                Deployment successful!
 
-                Change nginx.conf manually to switch traffic.
+                Active environment:
+                ${ACTIVE_COLOR}
 
-                Then reload nginx:
 
-                docker exec reverse-proxy nginx -s reload
+                New environment:
+                ${DEPLOY_COLOR}
+
+
+                To switch traffic:
+
+                1. Edit nginx/nginx.conf
+
+                2. Change upstream servers from:
+                   ${ACTIVE_COLOR}
+
+                   to:
+
+                   ${DEPLOY_COLOR}
+
+
+                3. Reload nginx:
+
+                   docker exec reverse-proxy nginx -s reload
+
+
+                =========================================
 
                 """
 
@@ -349,6 +402,7 @@ pipeline {
                 sh """
 
                 docker image prune -f
+
 
                 """
 
