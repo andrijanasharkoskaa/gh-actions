@@ -12,8 +12,10 @@ services:
     networks:
       - devops-network
 
+    restart: always
+
   backend-blue:
-    image: backend:v1
+    image: ghcr.io/andrijanasharkoskaa/gh-actions/backend:latest
 
     container_name: backend-blue
 
@@ -22,11 +24,16 @@ services:
 
       MONGO_URL: mongodb://mongo:27017/testdb
 
+    depends_on:
+      - mongo
+
     networks:
       - devops-network
 
+    restart: always
+
   backend-green:
-    image: backend:v2
+    image: ghcr.io/andrijanasharkoskaa/gh-actions/backend:latest
 
     container_name: backend-green
 
@@ -35,24 +42,39 @@ services:
 
       MONGO_URL: mongodb://mongo:27017/testdb
 
+    depends_on:
+      - mongo
+
     networks:
       - devops-network
 
+    restart: always
+
   frontend-blue:
-    image: frontend:v1
+    image: ghcr.io/andrijanasharkoskaa/gh-actions/frontend:latest
 
     container_name: frontend-blue
 
+    depends_on:
+      - backend-blue
+
     networks:
       - devops-network
 
+    restart: always
+
   frontend-green:
-    image: frontend:v2
+    image: ghcr.io/andrijanasharkoskaa/gh-actions/frontend:latest
 
     container_name: frontend-green
 
+    depends_on:
+      - backend-green
+
     networks:
       - devops-network
+
+    restart: always
 
   reverse-proxy:
     image: nginx:alpine
@@ -67,12 +89,17 @@ services:
 
     depends_on:
       - frontend-blue
+
       - frontend-green
+
       - backend-blue
+
       - backend-green
 
     networks:
       - devops-network
+
+    restart: always
 
 volumes:
   mongo-data:
