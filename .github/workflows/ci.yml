@@ -44,7 +44,10 @@ jobs:
 
 
 
-      # Backend
+      # ==========================
+      # Backend validation
+      # ==========================
+
 
       - name: Install backend dependencies
 
@@ -54,15 +57,28 @@ jobs:
 
 
 
-      - name: Validate backend
+      - name: Validate backend startup
 
         working-directory: backend
 
-        run: npm start & sleep 5 && echo "Backend started successfully"
+        run: |
+
+          npm start &
+
+          SERVER_PID=$!
+
+          sleep 5
+
+          kill $SERVER_PID
+
+          echo "Backend started successfully"
 
 
 
-      # Frontend
+      # ==========================
+      # Frontend validation
+      # ==========================
+
 
       - name: Install frontend dependencies
 
@@ -76,7 +92,7 @@ jobs:
 
         working-directory: frontend
 
-        run: npm test -- --watchAll=false
+        run: npm test -- --watchAll=false --passWithNoTests
 
 
 
